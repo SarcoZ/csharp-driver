@@ -204,7 +204,7 @@ namespace Cassandra
             if (Keyspace != null)
             {
                 // Borrow a connection, trying to fail fast
-                IRequestHandler handler = new RequestHandler(this, _serializer);
+                IRequestHandler handler = new RequestHandler(this, _serializer, Configuration.DefaultExecutionProfile);
                 await handler.GetNextConnectionAsync(new Dictionary<IPEndPoint, Exception>()).ConfigureAwait(false);
             }
 
@@ -265,6 +265,13 @@ namespace Cassandra
             return task.Result;
         }
 
+        public RowSet Execute(IStatement statement, string executionProfileName)
+        {
+            var task = ExecuteAsync(statement, executionProfileName);
+            TaskHelper.WaitToComplete(task, Configuration.ClientOptions.QueryAbortTimeout);
+            return task.Result;
+        }
+
         /// <inheritdoc />
         public RowSet Execute(IStatement statement)
         {
@@ -276,25 +283,35 @@ namespace Cassandra
         /// <inheritdoc />
         public RowSet Execute(string cqlQuery)
         {
-            return Execute(new SimpleStatement(cqlQuery).SetConsistencyLevel(Configuration.QueryOptions.GetConsistencyLevel()).SetPageSize(Configuration.QueryOptions.GetPageSize()));
+            return Execute(GetDefaultStatement(cqlQuery));
+        }
+
+        public RowSet Execute(string cqlQuery, string executionProfileName)
+        {
+            return Execute(GetDefaultStatement(cqlQuery), executionProfileName);
         }
 
         /// <inheritdoc />
         public RowSet Execute(string cqlQuery, ConsistencyLevel consistency)
         {
-            return Execute(new SimpleStatement(cqlQuery).SetConsistencyLevel(consistency).SetPageSize(Configuration.QueryOptions.GetPageSize()));
+            return Execute(GetDefaultStatement(cqlQuery).SetConsistencyLevel(consistency));
         }
 
         /// <inheritdoc />
         public RowSet Execute(string cqlQuery, int pageSize)
         {
-            return Execute(new SimpleStatement(cqlQuery).SetConsistencyLevel(Configuration.QueryOptions.GetConsistencyLevel()).SetPageSize(pageSize));
+            return Execute(GetDefaultStatement(cqlQuery).SetPageSize(pageSize));
         }
 
         /// <inheritdoc />
         public Task<RowSet> ExecuteAsync(IStatement statement)
         {
-            return new RequestHandler(this, _serializer, statement).SendAsync();
+            return new RequestHandler(this, _serializer, statement, Configuration.DefaultExecutionProfile).SendAsync();
+        }
+
+        public Task<RowSet> ExecuteAsync(IStatement statement, string executionProfileName)
+        {
+            return new RequestHandler(this, _serializer, statement, GetExecutionProfile(executionProfileName)).SendAsync();
         }
 
         /// <inheritdoc />
@@ -401,6 +418,21 @@ namespace Cassandra
         public bool WaitForSchemaAgreement(IPEndPoint hostAddress)
         {
             return false;
+        }
+
+        private IStatement GetDefaultStatement(string cqlQuery)
+        {
+            return new SimpleStatement(cqlQuery).SetConsistencyLevel(Configuration.QueryOptions.GetConsistencyLevel()).SetPageSize(Configuration.QueryOptions.GetPageSize());
+        }
+
+        private ExecutionProfile GetExecutionProfile(string executionProfileName)
+        {
+            if (!Configuration.ExecutionProfiles.TryGetValue(executionProfileName, out var profile))
+            {
+                throw new ArgumentException("The provided execution profile name does not exist. It must be added through the Cluster Builder.");
+            }
+
+            return profile;
         }
     }
 }

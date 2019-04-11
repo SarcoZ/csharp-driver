@@ -104,6 +104,10 @@ namespace Cassandra
 
         internal ISessionFactoryBuilder<IInternalCluster, IInternalSession> SessionFactoryBuilder { get; }
 
+        internal IReadOnlyDictionary<string, ExecutionProfile> ExecutionProfiles { get; }
+
+        internal ExecutionProfile DefaultExecutionProfile { get; }
+
         internal Configuration() :
             this(Policies.DefaultPolicies,
                  new ProtocolOptions(),
@@ -115,7 +119,8 @@ namespace Cassandra
                  new QueryOptions(),
                  new DefaultAddressTranslator(),
                  new StartupOptionsFactory(),
-                 new SessionFactoryBuilder())
+                 new SessionFactoryBuilder(),
+                 new Dictionary<string, ExecutionProfile>())
         {
         }
 
@@ -133,7 +138,8 @@ namespace Cassandra
                                QueryOptions queryOptions,
                                IAddressTranslator addressTranslator,
                                IStartupOptionsFactory startupOptionsFactory,
-                               ISessionFactoryBuilder<IInternalCluster, IInternalSession> sessionFactoryBuilder)
+                               ISessionFactoryBuilder<IInternalCluster, IInternalSession> sessionFactoryBuilder,
+                               IReadOnlyDictionary<string, ExecutionProfile> executionProfiles)
         {
             AddressTranslator = addressTranslator ?? throw new ArgumentNullException(nameof(addressTranslator));
             QueryOptions = queryOptions ?? throw new ArgumentNullException(nameof(queryOptions));
@@ -146,6 +152,16 @@ namespace Cassandra
             AuthInfoProvider = authInfoProvider;
             StartupOptionsFactory = startupOptionsFactory;
             SessionFactoryBuilder = sessionFactoryBuilder;
+            ExecutionProfiles = executionProfiles;
+
+            DefaultExecutionProfile = new ExecutionProfile(
+                QueryOptions.GetConsistencyLevel(),
+                QueryOptions.GetSerialConsistencyLevel(),
+                SocketOptions.ReadTimeoutMillis,
+                Policies.LoadBalancingPolicy,
+                Policies.SpeculativeExecutionPolicy,
+                Policies.ExtendedRetryPolicy);
+
             // Create the buffer pool with 16KB for small buffers and 256Kb for large buffers.
             // The pool does not eagerly reserve the buffers, so it doesn't take unnecessary memory
             // to create the instance.

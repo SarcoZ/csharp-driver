@@ -278,12 +278,13 @@ namespace Cassandra.Requests
             {
                 rs.Info.SetAchievedConsistency(request.Consistency);
             }
-            SetAutoPage(rs, _session, _parent.Statement);
+            SetAutoPage(rs, _session);
             return rs;
         }
 
-        private void SetAutoPage(RowSet rs, IInternalSession session, IStatement statement)
+        private void SetAutoPage(RowSet rs, IInternalSession session)
         {
+            var statement = _parent.Statement;
             rs.AutoPage = statement != null && statement.AutoPage;
             if (rs.AutoPage && rs.PagingState != null && _request is IQueryRequest)
             {
@@ -299,15 +300,15 @@ namespace Cassandra.Requests
                     var request = (IQueryRequest)_parent.BuildRequest(statement, _parent.Serializer,
                         session.Cluster.Configuration);
                     request.PagingState = pagingState;
-                    return NewRequestHandler(session, _parent.Serializer, request, statement).SendAsync();
+                    return NewRequestHandler(session, _parent.Serializer, request, statement, _parent.ExecutionProfile).SendAsync();
                 }, _session.Cluster.Configuration.ClientOptions.QueryAbortTimeout);
             }
         }
 
         protected virtual IRequestHandler NewRequestHandler(
-            IInternalSession session, Serializer serializer, IRequest request, IStatement statement)
+            IInternalSession session, Serializer serializer, IRequest request, IStatement statement, ExecutionProfile executionProfile)
         {
-            return new RequestHandler(session, _parent.Serializer, request, statement);
+            return new RequestHandler(session, serializer, request, statement, executionProfile);
         }
 
         /// <summary>
