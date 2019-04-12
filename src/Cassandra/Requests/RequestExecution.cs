@@ -21,7 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Cassandra.ExecutionProfiles;
 using Cassandra.Responses;
 using Cassandra.Serialization;
 using Cassandra.SessionManagement;
@@ -156,7 +156,8 @@ namespace Cassandra.Requests
         /// </summary>
         private void Send(IRequest request, Action<Exception, Response> callback)
         {
-            var timeoutMillis = Timeout.Infinite;
+            var timeoutMillis = _parent.RequestOptions.ReadTimeoutMillis;
+
             if (_parent.Statement != null)
             {
                 timeoutMillis = _parent.Statement.ReadTimeoutMillis;
@@ -297,18 +298,17 @@ namespace Cassandra.Requests
                         return Task.FromResult(RowSet.Empty());
                     }
 
-                    var request = (IQueryRequest)_parent.BuildRequest(statement, _parent.Serializer,
-                        session.Cluster.Configuration);
+                    var request = (IQueryRequest)_parent.BuildRequest();
                     request.PagingState = pagingState;
-                    return NewRequestHandler(session, _parent.Serializer, request, statement, _parent.ExecutionProfile).SendAsync();
-                }, _session.Cluster.Configuration.ClientOptions.QueryAbortTimeout);
+                    return NewRequestHandler(session, _parent.Serializer, request, statement, _parent.RequestOptions).SendAsync();
+                }, _parent.RequestOptions.QueryAbortTimeout);
             }
         }
 
         protected virtual IRequestHandler NewRequestHandler(
-            IInternalSession session, Serializer serializer, IRequest request, IStatement statement, ExecutionProfile executionProfile)
+            IInternalSession session, Serializer serializer, IRequest request, IStatement statement, IRequestOptions requestOptions)
         {
-            return new RequestHandler(session, serializer, request, statement, executionProfile);
+            return new RequestHandler(session, serializer, request, statement, requestOptions);
         }
 
         /// <summary>

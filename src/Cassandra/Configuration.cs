@@ -16,7 +16,8 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using Cassandra.ExecutionProfiles;
 using Cassandra.Requests;
 using Cassandra.Serialization;
 using Cassandra.SessionManagement;
@@ -104,9 +105,9 @@ namespace Cassandra
 
         internal ISessionFactoryBuilder<IInternalCluster, IInternalSession> SessionFactoryBuilder { get; }
 
-        internal IReadOnlyDictionary<string, ExecutionProfile> ExecutionProfiles { get; }
+        internal IReadOnlyDictionary<string, IRequestOptions> RequestOptions { get; }
 
-        internal ExecutionProfile DefaultExecutionProfile { get; }
+        internal IRequestOptions DefaultRequestOptions { get; }
 
         internal Configuration() :
             this(Policies.DefaultPolicies,
@@ -152,15 +153,12 @@ namespace Cassandra
             AuthInfoProvider = authInfoProvider;
             StartupOptionsFactory = startupOptionsFactory;
             SessionFactoryBuilder = sessionFactoryBuilder;
-            ExecutionProfiles = executionProfiles;
 
-            DefaultExecutionProfile = new ExecutionProfile(
-                QueryOptions.GetConsistencyLevel(),
-                QueryOptions.GetSerialConsistencyLevel(),
-                SocketOptions.ReadTimeoutMillis,
-                Policies.LoadBalancingPolicy,
-                Policies.SpeculativeExecutionPolicy,
-                Policies.ExtendedRetryPolicy);
+            RequestOptions = 
+                executionProfiles.ToDictionary<KeyValuePair<string, ExecutionProfile>, string, IRequestOptions>(
+                    kvp => kvp.Key, 
+                    kvp => new RequestOptions(kvp.Value, policies, socketOptions, queryOptions, clientOptions));
+            DefaultRequestOptions = new RequestOptions(null, policies, socketOptions, queryOptions, clientOptions);
 
             // Create the buffer pool with 16KB for small buffers and 256Kb for large buffers.
             // The pool does not eagerly reserve the buffers, so it doesn't take unnecessary memory

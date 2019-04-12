@@ -115,8 +115,9 @@ namespace Cassandra
             _host.Remove += OnHostRemoved;
             _host.DistanceChanged += OnDistanceChanged;
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _maxRequestsPerConnection = config.GetPoolingOptions(serializer.ProtocolVersion)
-                                              .GetMaxRequestsPerConnection();
+            _maxRequestsPerConnection = config
+                                        .GetPoolingOptions(serializer.ProtocolVersion)
+                                        .GetMaxRequestsPerConnection();
             _serializer = serializer;
             _timer = config.Timer;
             _reconnectionSchedule = config.Policies.ReconnectionPolicy.NewSchedule();

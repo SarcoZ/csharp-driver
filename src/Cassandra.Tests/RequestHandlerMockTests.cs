@@ -42,7 +42,8 @@ namespace Cassandra.Tests
                 new QueryOptions(),
                 new DefaultAddressTranslator(),
                 Mock.Of<IStartupOptionsFactory>(),
-                new SessionFactoryBuilder());
+                new SessionFactoryBuilder(),
+                new Dictionary<string, ExecutionProfile>());
         }
 
         [Test]
@@ -113,7 +114,7 @@ namespace Cassandra.Tests
 
         private class ProxyRequestHandler : RequestHandler
         {
-            public ProxyRequestHandler(IInternalSession session, Serializer serializer) : base(session, serializer)
+            public ProxyRequestHandler(IInternalSession session, Serializer serializer) : base(session, serializer, session.Cluster.Configuration.DefaultRequestOptions)
             {
             }
 

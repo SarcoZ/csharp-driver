@@ -15,6 +15,7 @@
 //
 
 using System.Collections.Concurrent;
+using Cassandra.ExecutionProfiles;
 
 namespace Cassandra.SessionManagement
 {

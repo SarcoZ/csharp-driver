@@ -707,20 +707,22 @@ namespace Cassandra
             return Send(request, Configuration.SocketOptions.ConnectTimeoutMillis);
         }
 
-        /// <summary>
-        /// Sends a new request if possible. If it is not possible it queues it up.
-        /// </summary>
-        public Task<Response> Send(IRequest request, int timeoutMillis = Timeout.Infinite)
+        /// <inheritdoc />
+        public Task<Response> Send(IRequest request, int timeoutMillis)
         {
             var tcs = new TaskCompletionSource<Response>();
             Send(request, tcs.TrySet, timeoutMillis);
             return tcs.Task;
         }
+        
+        /// <inheritdoc />
+        public Task<Response> Send(IRequest request)
+        {
+            return Send(request, Configuration.DefaultRequestOptions.ReadTimeoutMillis);
+        }
 
-        /// <summary>
-        /// Sends a new request if possible and executes the callback when the response is parsed. If it is not possible it queues it up.
-        /// </summary>
-        public OperationState Send(IRequest request, Action<Exception, Response> callback, int timeoutMillis = Timeout.Infinite)
+        /// <inheritdoc />
+        public OperationState Send(IRequest request, Action<Exception, Response> callback, int timeoutMillis)
         {
             if (_isCanceled)
             {
@@ -735,11 +737,17 @@ namespace Cassandra
             var state = new OperationState(callback)
             {
                 Request = request,
-                TimeoutMillis = timeoutMillis > 0 ? timeoutMillis : Configuration.SocketOptions.ReadTimeoutMillis
+                TimeoutMillis = timeoutMillis
             };
             _writeQueue.Enqueue(state);
             RunWriteQueue();
             return state;
+        }
+
+        /// <inheritdoc />
+        public OperationState Send(IRequest request, Action<Exception, Response> callback)
+        {
+            return Send(request, callback, Configuration.DefaultRequestOptions.ReadTimeoutMillis);
         }
 
         private void RunWriteQueue()

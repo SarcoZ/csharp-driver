@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-
+using Cassandra.ExecutionProfiles;
 using Cassandra.Requests;
 using Cassandra.Responses;
 using Cassandra.Serialization;
@@ -70,6 +70,7 @@ namespace Cassandra.Tests
         public void Should_SendRequest_When_AConnectionIsObtained(bool currentHostRetry)
         {
             var mockSession = Mock.Of<IInternalSession>();
+            var clusterMock = Mock.Of<ICluster>();
             var mockRequest = Mock.Of<IRequest>();
             var mockRequestExecution = Mock.Of<IRequestHandler>();
             var connection = Mock.Of<IConnection>();
@@ -85,6 +86,9 @@ namespace Cassandra.Tests
             Mock.Get(mockRequestExecution)
                 .Setup(m => m.GetNextValidHost(It.IsAny<Dictionary<IPEndPoint, Exception>>()))
                 .Returns(validHost);
+            Mock.Get(mockRequestExecution)
+                .Setup(c => c.RequestOptions)
+                .Returns(new Configuration().DefaultRequestOptions);
             var sut = new ProxyRequestExecution(mockRequestExecution, mockSession, mockRequest);
 
             sut.Start(currentHostRetry);
@@ -126,7 +130,8 @@ namespace Cassandra.Tests
             Mock.Get(mockParent)
                 .SetupSequence(m => m.GetNextValidHost(It.IsAny<Dictionary<IPEndPoint, Exception>>()))
                 .Returns(validHost)
-                .Returns(secondValidHost);
+                .Returns(secondValidHost)
+                .Throws(new NoHostAvailableException("shouldn't reach here"));
 
             // Setup retry policy
             var exception = new OverloadedException(string.Empty);
@@ -147,6 +152,10 @@ namespace Cassandra.Tests
             Mock.Get(mockParent)
                 .Setup(m => m.ValidateHostAndGetConnectionAsync(validHost.Host, It.IsAny<Dictionary<IPEndPoint, Exception>>()))
                 .ReturnsAsync(connection);
+
+            Mock.Get(mockParent)
+                .Setup(m => m.RequestOptions)
+                .Returns(config.DefaultRequestOptions);
 
             var sut = new ProxyRequestExecution(mockParent, mockSession, mockRequest);
             sut.Start(false);
@@ -175,7 +184,7 @@ namespace Cassandra.Tests
             {
             }
 
-            protected override IRequestHandler NewRequestHandler(IInternalSession session, Serializer serializer, IRequest request, IStatement statement)
+            protected override IRequestHandler NewRequestHandler(IInternalSession session, Serializer serializer, IRequest request, IStatement statement, IRequestOptions requestOptions)
             {
                 return Mock.Of<IRequestHandler>();
             }

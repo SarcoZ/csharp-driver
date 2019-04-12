@@ -24,6 +24,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Cassandra.Collections;
+using Cassandra.ExecutionProfiles;
 using Cassandra.Helpers;
 using Cassandra.Requests;
 using Cassandra.Serialization;
@@ -250,14 +251,13 @@ namespace Cassandra
                 try
                 {
                     // Only abort the async operations when at least twice the time for ConnectTimeout per host passed
-                    var initialAbortTimeout = Configuration.SocketOptions.ConnectTimeoutMillis * 2 *
-                                              _metadata.Hosts.Count;
+                    var initialAbortTimeout = Configuration.SocketOptions.ConnectTimeoutMillis * 2 * _metadata.Hosts.Count;
                     initialAbortTimeout = Math.Max(initialAbortTimeout, ControlConnection.MetadataAbortTimeout);
                     await _controlConnection.Init().WaitToCompleteAsync(initialAbortTimeout).ConfigureAwait(false);
 
                     // Initialize policies
-                    Configuration.Policies.LoadBalancingPolicy.Initialize(this);
-                    Configuration.Policies.SpeculativeExecutionPolicy.Initialize(this);
+                    Configuration.DefaultRequestOptions.LoadBalancingPolicy.Initialize(this);
+                    Configuration.DefaultRequestOptions.SpeculativeExecutionPolicy.Initialize(this);
                 }
                 catch (NoHostAvailableException)
                 {
@@ -420,7 +420,7 @@ namespace Cassandra
 
         private void OnHostUp(Host h)
         {
-            if (!Configuration.QueryOptions.IsReprepareOnUp())
+            if (!Configuration.DefaultRequestOptions.ReprepareOnUp)
             {
                 return;
             }
@@ -472,7 +472,7 @@ namespace Cassandra
             _metadata.ShutDown(timeoutMs);
             _controlConnection.Dispose();
             Configuration.Timer.Dispose();
-            Configuration.Policies.SpeculativeExecutionPolicy.Dispose();
+            Configuration.DefaultRequestOptions.SpeculativeExecutionPolicy.Dispose();
             _logger.Info("Cluster [" + _metadata.ClusterName + "] has been shut down.");
         }
 
