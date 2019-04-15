@@ -109,6 +109,8 @@ namespace Cassandra
 
         internal IRequestOptions DefaultRequestOptions { get; }
 
+        internal IRequestHandlerFactory RequestHandlerFactory { get; }
+
         internal Configuration() :
             this(Policies.DefaultPolicies,
                  new ProtocolOptions(),
@@ -140,7 +142,8 @@ namespace Cassandra
                                IAddressTranslator addressTranslator,
                                IStartupOptionsFactory startupOptionsFactory,
                                ISessionFactoryBuilder<IInternalCluster, IInternalSession> sessionFactoryBuilder,
-                               IReadOnlyDictionary<string, ExecutionProfile> executionProfiles)
+                               IReadOnlyDictionary<string, ExecutionProfile> executionProfiles,
+                               IRequestHandlerFactory requestHandlerFactory = null)
         {
             AddressTranslator = addressTranslator ?? throw new ArgumentNullException(nameof(addressTranslator));
             QueryOptions = queryOptions ?? throw new ArgumentNullException(nameof(queryOptions));
@@ -159,6 +162,7 @@ namespace Cassandra
                     kvp => kvp.Key, 
                     kvp => new RequestOptions(kvp.Value, policies, socketOptions, queryOptions, clientOptions));
             DefaultRequestOptions = new RequestOptions(null, policies, socketOptions, queryOptions, clientOptions);
+            RequestHandlerFactory = requestHandlerFactory ?? new RequestHandlerFactory();
 
             // Create the buffer pool with 16KB for small buffers and 256Kb for large buffers.
             // The pool does not eagerly reserve the buffers, so it doesn't take unnecessary memory

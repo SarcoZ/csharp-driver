@@ -204,7 +204,7 @@ namespace Cassandra
             if (Keyspace != null)
             {
                 // Borrow a connection, trying to fail fast
-                IRequestHandler handler = new RequestHandler(this, _serializer, Configuration.DefaultRequestOptions);
+                var handler = Configuration.RequestHandlerFactory.Create(this, _serializer, Configuration.DefaultRequestOptions);
                 await handler.GetNextConnectionAsync(new Dictionary<IPEndPoint, Exception>()).ConfigureAwait(false);
             }
 
@@ -306,12 +306,16 @@ namespace Cassandra
         /// <inheritdoc />
         public Task<RowSet> ExecuteAsync(IStatement statement)
         {
-            return new RequestHandler(this, _serializer, statement, Configuration.DefaultRequestOptions).SendAsync();
+            return Configuration.RequestHandlerFactory
+                                .Create(this, _serializer, statement, Configuration.DefaultRequestOptions)
+                                .SendAsync();
         }
 
         public Task<RowSet> ExecuteAsync(IStatement statement, string executionProfileName)
         {
-            return new RequestHandler(this, _serializer, statement, GetRequestOptions(executionProfileName)).SendAsync();
+            return Configuration.RequestHandlerFactory
+                                .Create(this, _serializer, statement, GetRequestOptions(executionProfileName))
+                                .SendAsync();
         }
 
         /// <inheritdoc />
