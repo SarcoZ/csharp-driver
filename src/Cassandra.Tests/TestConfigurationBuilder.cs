@@ -51,6 +51,10 @@ namespace Cassandra.Tests
 
         public IHostConnectionPoolFactory HostConnectionPoolFactory { get; set; } = new HostConnectionPoolFactory();
 
+        public IRequestExecutionFactory RequestExecutionFactory { get; set; } = new RequestExecutionFactory();
+
+        public IConnectionFactory ConnectionFactory { get; set; } = new ConnectionFactory();
+
         public Configuration Build()
         {
             return new Configuration(
@@ -67,7 +71,9 @@ namespace Cassandra.Tests
                 SessionFactoryBuilder,
                 ExecutionProfiles,
                 RequestHandlerFactory,
-                HostConnectionPoolFactory);
+                HostConnectionPoolFactory,
+                RequestExecutionFactory,
+                ConnectionFactory);
         }
     }
 }

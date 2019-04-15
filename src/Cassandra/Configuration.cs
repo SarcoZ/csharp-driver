@@ -114,6 +114,10 @@ namespace Cassandra
 
         internal IHostConnectionPoolFactory HostConnectionPoolFactory { get; }
 
+        internal IRequestExecutionFactory RequestExecutionFactory { get; }
+
+        internal IConnectionFactory ConnectionFactory { get; }
+
         internal Configuration() :
             this(Policies.DefaultPolicies,
                  new ProtocolOptions(),
@@ -147,7 +151,9 @@ namespace Cassandra
                                ISessionFactoryBuilder<IInternalCluster, IInternalSession> sessionFactoryBuilder,
                                IReadOnlyDictionary<string, ExecutionProfile> executionProfiles,
                                IRequestHandlerFactory requestHandlerFactory = null,
-                               IHostConnectionPoolFactory hostConnectionPoolFactory = null)
+                               IHostConnectionPoolFactory hostConnectionPoolFactory = null,
+                               IRequestExecutionFactory requestExecutionFactory = null,
+                               IConnectionFactory connectionFactory = null)
         {
             AddressTranslator = addressTranslator ?? throw new ArgumentNullException(nameof(addressTranslator));
             QueryOptions = queryOptions ?? throw new ArgumentNullException(nameof(queryOptions));
@@ -168,6 +174,8 @@ namespace Cassandra
             DefaultRequestOptions = new RequestOptions(null, policies, socketOptions, queryOptions, clientOptions);
             RequestHandlerFactory = requestHandlerFactory ?? new RequestHandlerFactory();
             HostConnectionPoolFactory = hostConnectionPoolFactory ?? new HostConnectionPoolFactory();
+            RequestExecutionFactory = requestExecutionFactory ?? new RequestExecutionFactory();
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             // Create the buffer pool with 16KB for small buffers and 256Kb for large buffers.
             // The pool does not eagerly reserve the buffers, so it doesn't take unnecessary memory

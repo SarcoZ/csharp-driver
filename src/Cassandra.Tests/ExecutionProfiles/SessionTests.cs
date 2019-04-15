@@ -49,8 +49,8 @@ namespace Cassandra.Tests.ExecutionProfiles
                 {
                     { "testE", ExecutionProfile
                                .Builder()
-                               .ConsistencyLevel(ConsistencyLevel.EachQuorum)
-                               .ReadTimeoutMillis(1)
+                               .WithConsistencyLevel(ConsistencyLevel.EachQuorum)
+                               .WithReadTimeoutMillis(1)
                                .Build() },
                     { "testE2", ExecutionProfile.Builder().Build() }
                 },

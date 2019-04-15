@@ -14,18 +14,15 @@
 //    limitations under the License.
 // 
 
-using Cassandra.ExecutionProfiles;
-using Cassandra.Serialization;
-using Cassandra.SessionManagement;
+using Cassandra.Responses;
+using Moq;
 
-namespace Cassandra.Requests
+namespace Cassandra.Tests.Requests
 {
-    internal interface IRequestHandlerFactory
+    internal class ProxyResultResponse : ResultResponse
     {
-        IRequestHandler Create(IInternalSession session, Serializer serializer, IRequest request, IStatement statement, IRequestOptions options);
-
-        IRequestHandler Create(IInternalSession session, Serializer serializer, IStatement statement, IRequestOptions options);
-
-        IRequestHandler Create(IInternalSession session, Serializer serializer);
+        public ProxyResultResponse(ResultResponseKind kind) : base(kind, Mock.Of<IOutput>())
+        {
+        }
     }
 }

@@ -14,18 +14,24 @@
 //    limitations under the License.
 // 
 
-using Cassandra.ExecutionProfiles;
+using System;
+using System.Net;
+using Cassandra.Connections;
 using Cassandra.Serialization;
-using Cassandra.SessionManagement;
 
-namespace Cassandra.Requests
+namespace Cassandra.Tests.Connections
 {
-    internal interface IRequestHandlerFactory
+    internal class FakeConnectionFactory : IConnectionFactory
     {
-        IRequestHandler Create(IInternalSession session, Serializer serializer, IRequest request, IStatement statement, IRequestOptions options);
+        private readonly Func<IConnection> _func;
 
-        IRequestHandler Create(IInternalSession session, Serializer serializer, IStatement statement, IRequestOptions options);
-
-        IRequestHandler Create(IInternalSession session, Serializer serializer);
+        public FakeConnectionFactory(Func<IConnection> func)
+        {
+            _func = func;
+        }
+        public IConnection Create(Serializer serializer, IPEndPoint endpoint, Configuration configuration)
+        {
+            return _func();
+        }
     }
 }
