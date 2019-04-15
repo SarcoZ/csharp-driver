@@ -15,7 +15,6 @@
 //
 
 using System.Collections.Concurrent;
-using Cassandra.ExecutionProfiles;
 
 namespace Cassandra.SessionManagement
 {
@@ -23,12 +22,12 @@ namespace Cassandra.SessionManagement
     internal interface IInternalCluster : ICluster
     {
         bool AnyOpenConnections(Host host);
-        
+
         /// <summary>
         /// Gets the control connection used by the cluster
         /// </summary>
         ControlConnection GetControlConnection();
-        
+
         /// <summary>
         /// Gets the the prepared statements cache
         /// </summary>

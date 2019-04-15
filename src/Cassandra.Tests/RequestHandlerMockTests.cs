@@ -114,7 +114,7 @@ namespace Cassandra.Tests
 
         private class ProxyRequestHandler : RequestHandler
         {
-            public ProxyRequestHandler(IInternalSession session, Serializer serializer) : base(session, serializer, session.Cluster.Configuration.DefaultRequestOptions)
+            public ProxyRequestHandler(IInternalSession session, Serializer serializer) : base(session, serializer)
             {
             }
 

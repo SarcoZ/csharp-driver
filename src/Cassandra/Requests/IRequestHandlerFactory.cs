@@ -24,6 +24,6 @@ namespace Cassandra.Requests
     {
         IRequestHandler Create(IInternalSession session, Serializer serializer, IStatement statement, IRequestOptions options);
 
-        IRequestHandler Create(IInternalSession session, Serializer serializer, IRequestOptions options);
+        IRequestHandler Create(IInternalSession session, Serializer serializer);
     }
 }
